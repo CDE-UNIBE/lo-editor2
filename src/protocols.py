@@ -193,7 +193,7 @@ class ActivityProtocol(QObject):
 
         qUrl = QUrl(url)
         self.request = QNetworkRequest(qUrl)
-        #self.request.setRawHeader("Authorization", self.login)
+        self.request.setRawHeader("Authorization", self.login)
 
         self.manager.get(self.request)
 

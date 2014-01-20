@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'Ui_OlaInterfaceDialog.ui'
 #
-# Created: Tue May 21 12:26:46 2013
+# Created: Mon Jan 20 12:21:23 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -56,7 +56,7 @@ class Ui_OlaInterfaceDialog(object):
         self.hostLineEdit = QtGui.QLineEdit(self.getActivitiesPage)
         self.hostLineEdit.setMinimumSize(QtCore.QSize(220, 0))
         self.hostLineEdit.setInputMask(_fromUtf8(""))
-        self.hostLineEdit.setText(_fromUtf8("http://localhost:6543"))
+        self.hostLineEdit.setText(_fromUtf8("http://www.landobservatory.org"))
         self.hostLineEdit.setObjectName(_fromUtf8("hostLineEdit"))
         self.hostHorizontalLayout.addWidget(self.hostLineEdit)
         self.verticalLayout_5.addLayout(self.hostHorizontalLayout)

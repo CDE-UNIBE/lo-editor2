@@ -27,13 +27,13 @@ from PyQt4.QtWebKit import QWebView
 from Ui_ErrorMessage import Ui_Dialog as Ui_ErrorMessage
 from Ui_OlaInterfaceDialog import Ui_OlaInterfaceDialog
 from models import Activity
-from qgis.core import *
 from protocols import SettingsProtocol
+from qgis.core import *
 import simplejson as json
 
 class OlaInterfaceDialog(QDialog):
 
-    readSettingsFinishedSignal = pyqtSignal( bool, int, str )
+    readSettingsFinishedSignal = pyqtSignal(bool, int, str)
 
     def __init__(self, iface, ** kwargs):
         QDialog.__init__(self)
@@ -56,14 +56,81 @@ class OlaInterfaceDialog(QDialog):
         self.loggingTextEdit = self.findChildren(QPlainTextEdit, "loggingTextEdit")[0]
         return Logger(self.loggingTextEdit)
 
+    def _create_layer_from_taggroup(self, taggroup):
+        """
+        Create a new layer from a taggroup definition
+        """
+
+        # Get all spatial keys, i.e. keys that can have a geometry
+        keys = []
+        for i in self.settings.value("mainkeys"):
+            keys.append(str(i))
+
+        try:
+            tgItem = QTreeWidgetItem(self.treeWidget.invisibleRootItem())
+            tgItem.setText(0, "%s: %s" % (taggroup['main_tag']['key'], taggroup['main_tag']['value']));
+
+            idItem = QTreeWidgetItem(tgItem)
+            idItem.setText(0, "id: %s" % (taggroup['tg_id']))
+
+            tagNr = 0
+            for tag in taggroup['tags']:
+                tItem = QTreeWidgetItem(tgItem)
+                tItem.setText(tagNr, "%s: %s" % (tag['key'], tag['value']))
+                tagNr += 1
+
+            if taggroup['main_tag']['key'] in keys:
+
+                # Create a memory layer per taggroup
+                l = QgsVectorLayer("MultiPolygon?crs=epsg:4326&index=yes", "%s: %s" % (taggroup['main_tag']['key'], taggroup['main_tag']['value']), "memory")
+                provider = l.dataProvider()
+                # update layer's extent when new features have been added
+                # because change of extent in provider is not propagated to the layer
+                l.updateExtents()
+
+                #pr = taggroupLayer.dataProvider()
+                self.connect(l, SIGNAL("layerModified( bool )"), self._layer_modified)
+
+                if 'geometry' in taggroup:
+
+                    if taggroup['geometry']['type'].lower() == "MultiPolygon".lower():
+
+                        polygon_list = []
+
+                        for polygon in taggroup['geometry']['coordinates']:
+
+                            polyline_list = []
+
+                            for polyline in polygon:
+
+                                point_list = []
+
+                                for point in polyline:
+                                    point_list.append(QgsPoint(point[0], point[1]))
+
+                                polyline_list.append(point_list)
+
+                            polygon_list.append(polyline_list)
+
+                        multiPolygon = QgsGeometry.fromMultiPolygon(polygon_list)
+                        feature = QgsFeature()
+                        feature.setGeometry(multiPolygon)
+                        #feature.setAttributes({})
+                        provider.addFeatures([feature])
+
+                # Set custom property to this layer
+                l.setCustomProperty("lo", True)
+                l.setCustomProperty("id", taggroup['tg_id'])
+                return l
+        except KeyError:
+            # A KeyError is thrown if the main_tag of the current taggroup is null
+            pass
+
+
     def getActivityByIdFinished(self, success, statusCode, response):
 
         # Disconnect events
         self.activityRequestManager.disconnect(self.activityRequestManager.activityProtocol, SIGNAL("readSignal( bool, int, str )"), self.getActivityByIdFinished)
-
-        keys = []
-        for i in self.settings.value("mainkeys"):
-            keys.append(str(i))
 
         try:
             data = json.loads(str(response))
@@ -76,65 +143,9 @@ class OlaInterfaceDialog(QDialog):
 
             for taggroup in data['data'][0]['taggroups']:
 
-                try:
-                    tgItem = QTreeWidgetItem(self.treeWidget.invisibleRootItem())
-                    tgItem.setText(0, "%s: %s" % (taggroup['main_tag']['key'], taggroup['main_tag']['value']));
-
-                    idItem = QTreeWidgetItem(tgItem)
-                    idItem.setText(0, "id: %s" % (taggroup['tg_id']))
-                    
-                    tagNr = 0
-                    for tag in taggroup['tags']:
-                        tItem = QTreeWidgetItem(tgItem)
-                        tItem.setText(tagNr, "%s: %s" % (tag['key'], tag['value']))
-                        tagNr += 1
-
-                    if taggroup['main_tag']['key'] in keys:
-
-                        # Create a memory layer per taggroup
-                        l = QgsVectorLayer("MultiPolygon?crs=epsg:4326&index=yes", "%s: %s" % (taggroup['main_tag']['key'], taggroup['main_tag']['value']), "memory")
-                        provider = l.dataProvider()
-                        # update layer's extent when new features have been added
-                        # because change of extent in provider is not propagated to the layer
-                        l.updateExtents()
-
-                        #pr = taggroupLayer.dataProvider()
-                        self.connect(l, SIGNAL("layerModified( bool )"), self._layer_modified)
-
-                        if 'geometry' in taggroup:
-
-                            if taggroup['geometry']['type'].lower() == "MultiPolygon".lower():
-
-                                polygon_list = []
-
-                                for polygon in taggroup['geometry']['coordinates']:
-
-                                    polyline_list = []
-
-                                    for polyline in polygon:
-
-                                        point_list = []
-
-                                        for point in polyline:
-                                            point_list.append(QgsPoint(point[0], point[1]))
-
-                                        polyline_list.append(point_list)
-
-                                    polygon_list.append(polyline_list)
-
-                                multiPolygon = QgsGeometry.fromMultiPolygon(polygon_list)
-                                feature = QgsFeature()
-                                feature.setGeometry(multiPolygon)
-                                feature.setAttributes({})
-                                provider.addFeatures([feature])
-
-                        # Set custom property to this layer
-                        l.setCustomProperty("lo", True)
-                        l.setCustomProperty("id", taggroup['tg_id'])
-                        layers.append(l)
-                except:
-                    # A KeyError is thrown if the main_tag of the current taggroup is null
-                    pass
+                l = self._create_layer_from_taggroup(taggroup)
+                if l is not None:
+                    layers.append(l)
 
             QgsMapLayerRegistry.instance().addMapLayers(layers)
         except:
@@ -243,7 +254,7 @@ class OlaInterfaceDialog(QDialog):
 
                     activity['geometry'] = {
                     "type": "Point",
-                    "coordinates": [ p.x(), p.y() ]
+                    "coordinates": [p.x(), p.y()]
                     }
 
                     break
