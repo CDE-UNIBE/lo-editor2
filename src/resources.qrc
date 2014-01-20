@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/plugins/olainterface">
+        <file>intro.html</file>
+        <file>lo-logo.png</file>
+        <file>edit.png</file>
+        <file>save.png</file>
+        <file>go-previous.png</file>
+        <file>open.png</file>
+        <file>Edit-delete-2.svg</file>
+    </qresource>
+</RCC>

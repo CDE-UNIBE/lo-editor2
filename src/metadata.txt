@@ -1,0 +1,20 @@
+[general]
+name=Land Observatory Editor
+description=Land Observatory
+category=Plugins
+version=0.0.1
+experimental=False
+qgisMinimumVersion=2.0.0
+qgisMaximumVersion=2.99.0
+author=Centre for Development and Environment
+email=info@landobservatory.org
+changelog=
+  - initial version for QGIS 2.0
+  0.0.1
+; tags are in comma separated value format, spaces are allowed
+tags=landobservatory,crowd
+homepage=https://github.com/CDE-UNIBE/lo-editor2/wiki
+tracker=https://github.com/CDE-UNIBE/lo-editor2/issues
+repository=https://github.com/CDE-UNIBE/lo-editor2
+icon=./edit.png
+deprecated=False
