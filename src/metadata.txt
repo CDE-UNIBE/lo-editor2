@@ -1,12 +1,12 @@
 [general]
-name=Land Observatory Editor
-description=Land Observatory
+name=Land Observatory Editor 2
+description=Add and edit geometries on the Land Observatory platform
 category=Plugins
 version=0.0.1
 experimental=False
 qgisMinimumVersion=2.0.0
 qgisMaximumVersion=2.99.0
-author=Centre for Development and Environment
+author=Centre for Development and Environment, University of Bern
 email=info@landobservatory.org
 changelog=
   - initial version for QGIS 2.0
