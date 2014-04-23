@@ -27,7 +27,7 @@ from PyQt4.QtCore import pyqtSignal
 from PyQt4.QtNetwork import QNetworkAccessManager
 from PyQt4.QtNetwork import QNetworkRequest
 from PyQt4.QtNetwork import QNetworkReply
-import simplejson as json
+import json
 
 class SettingsProtocol(QObject):
 

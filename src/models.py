@@ -24,7 +24,7 @@ from PyQt4.QtCore import QUuid
 from PyQt4.QtCore import QVariant
 from PyQt4.QtCore import pyqtProperty
 from qgis.core import QgsFeature
-import simplejson as json
+import json
 
 class QPlainUuid(QUuid):
     """

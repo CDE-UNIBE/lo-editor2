@@ -29,7 +29,7 @@ from Ui_OlaInterfaceDialog import Ui_OlaInterfaceDialog
 from models import Activity
 from protocols import SettingsProtocol
 from qgis.core import *
-import simplejson as json
+import json
 
 class OlaInterfaceDialog(QDialog):
 

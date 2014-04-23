@@ -45,7 +45,7 @@ from qgis.core import QgsMapLayer
 from qgis.core import QgsMapLayerRegistry
 from qgis.core import QgsPoint
 from qgis.core import QgsVectorLayer
-import simplejson as json
+import json
 
 class ActivityRequestManager(RequestManager):
 
