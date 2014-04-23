@@ -2,15 +2,17 @@
 name=Land Observatory Editor 2
 description=Add and edit geometries on the Land Observatory platform
 category=Plugins
-version=0.0.1
+version=0.0.2
 experimental=False
 qgisMinimumVersion=2.0.0
 qgisMaximumVersion=2.99.0
 author=Centre for Development and Environment, University of Bern
 email=info@landobservatory.org
 changelog=
-  - initial version for QGIS 2.0
+  0.0.2
+  - remove simplejson dependency
   0.0.1
+  - initial version for QGIS 2.0
 ; tags are in comma separated value format, spaces are allowed
 tags=landobservatory,crowd
 homepage=https://github.com/CDE-UNIBE/lo-editor2/wiki
