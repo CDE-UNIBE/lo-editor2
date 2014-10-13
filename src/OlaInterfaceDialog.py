@@ -33,8 +33,6 @@ import json
 
 class OlaInterfaceDialog(QDialog):
 
-    readSettingsFinishedSignal = pyqtSignal(bool, int, str)
-
     def __init__(self, iface, ** kwargs):
         QDialog.__init__(self)
 
@@ -64,7 +62,7 @@ class OlaInterfaceDialog(QDialog):
         # Get all spatial keys, i.e. keys that can have a geometry
         keys = []
         for i in self.settings.value("mainkeys"):
-            keys.append(str(i))
+            keys.append(str(i[1]))
 
         try:
             tgItem = QTreeWidgetItem(self.treeWidget.invisibleRootItem())
@@ -369,8 +367,7 @@ class OlaInterfaceDialog(QDialog):
 
         # Read the settings from the server
         self.settingsProtocol = SettingsProtocol(host, user, password)
-        #self.connect(self.settingsProtocol, SIGNAL("readSignal( bool, int, str )"), self._read_settings_finished)
-        self.readSettingsFinishedSignal.connect(self._read_settings_finished)
+        self.connect(self.settingsProtocol, SIGNAL("readSignal( bool, int, QString )"), self._read_settings_finished)
         url = self.settingsProtocol.read()
         self.logger.log(url)
 

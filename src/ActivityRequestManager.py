@@ -65,7 +65,7 @@ class ActivityRequestManager(RequestManager):
         self.connect(self.activityProtocol, SIGNAL("readSignal( bool, int, QString )"), dialog.getActivitiesFinished)
         #self.readSignal.connect(dialog.getActivitiesFinished)
 
-        url = self.activityProtocol.read(extent)
+        url = self.activityProtocol.read(extent, dialog.iface)
         self.log(url)
 
     def getActivityById(self, id, dialog):

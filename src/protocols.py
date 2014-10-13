@@ -144,17 +144,24 @@ class ActivityProtocol(QObject):
 
         self.updated.emit(self.httpStatusCode in (200, 201), self.httpStatusCode, str(data))
 
-    def read(self, extent):
+    def read(self, extent, iface):
         self.connect(self.manager, SIGNAL("finished( QNetworkReply* )"), self.readRequestFinished)
         #self.finished.connect(self.readRequestFinished)
 
-        # Limit the longitude and latitutde maximum boundaries
-        xmin = extent.xMinimum() if extent.xMinimum() >= -180.0 else -180.0
-        ymin = extent.yMinimum() if extent.yMinimum() >= -90.0 else -90.0
-        xmax = extent.xMaximum() if extent.xMaximum() <= 180.0 else 180.0
-        ymax = extent.yMaximum() if extent.yMaximum() <= 90.0 else 90.0
+        # Get the map extent
+        xmin = extent.xMinimum()
+        ymin = extent.yMinimum()
+        xmax = extent.xMaximum()
+        ymax = extent.yMaximum()
+        
+        # Get the authority identifier for the projects destination reference
+        # system. Normally in case of EPSG that authid looks like "EPSG:4326"
+        authid = iface.mapCanvas().mapRenderer().destinationCrs().authid()
+        authcode = int(authid.split(":")[-1])
 
-        url = "%s/activities/json?bbox=%f,%f,%f,%f" % (self.host, xmin, ymin, xmax, ymax)
+        # Add explicitly the EPSG code to the bounding box, to enable users to
+        # work in a local reference system
+        url = "%s/activities/json?bbox=%f,%f,%f,%f&epsg=%1.f" % (self.host, xmin, ymin, xmax, ymax, authcode)
 
         qUrl = QUrl(url)
         self.request = QNetworkRequest(qUrl)
