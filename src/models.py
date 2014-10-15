@@ -180,11 +180,8 @@ class Activity(QObject):
 
         # The Uuid as trimmed string
         id = self._id.toString()
-        #feature.setAttributeMap({
-        #                        0: QVariant(id),
-        #                        1: QVariant(self._version)
-        #                        })
-        feature.setAttributes([(0, id), (1, self._version)])
+        # Set the attributes
+        feature.setAttributes([id, self._version])
         return feature
 
 

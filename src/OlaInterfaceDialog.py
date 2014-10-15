@@ -80,14 +80,14 @@ class OlaInterfaceDialog(QDialog):
             if taggroup['main_tag']['key'] in keys:
 
                 # Create a memory layer per taggroup
-                l = QgsVectorLayer("MultiPolygon?crs=epsg:4326&index=yes", "%s: %s" % (taggroup['main_tag']['key'], taggroup['main_tag']['value']), "memory")
+                l = QgsVectorLayer("MultiPolygon?crs=epsg:4326&field=key:string(100)&field=value:string(200)&index=yes", "%s: %s" % (taggroup['main_tag']['key'], taggroup['main_tag']['value']), "memory")
                 provider = l.dataProvider()
                 # update layer's extent when new features have been added
                 # because change of extent in provider is not propagated to the layer
                 l.updateExtents()
 
                 #pr = taggroupLayer.dataProvider()
-                self.connect(l, SIGNAL("layerModified( bool )"), self._layer_modified)
+                self.connect(l, SIGNAL("layerModified()"), self._layer_modified)
 
                 if 'geometry' in taggroup:
 
@@ -113,7 +113,7 @@ class OlaInterfaceDialog(QDialog):
                         multiPolygon = QgsGeometry.fromMultiPolygon(polygon_list)
                         feature = QgsFeature()
                         feature.setGeometry(multiPolygon)
-                        #feature.setAttributes({})
+                        feature.setAttributes([taggroup['main_tag']['key'], taggroup['main_tag']['value']])
                         provider.addFeatures([feature])
 
                 # Set custom property to this layer
@@ -166,7 +166,7 @@ class OlaInterfaceDialog(QDialog):
             return None
 
         # Create a memory layer
-        self.activityLayer = QgsVectorLayer("Point?crs=epsg:4326&field=id:string(80)&field=version:integer&index=yes", "Land deals representation points", "memory")
+        self.activityLayer = QgsVectorLayer("MultiPoint?crs=epsg:4326&field=id:string(80)&field=version:integer&index=yes", "Land deals representation points", "memory")
         pr = self.activityLayer.dataProvider()
 
         activities = self._parse_activities_response(response)
@@ -178,7 +178,7 @@ class OlaInterfaceDialog(QDialog):
         self.activityLayer.updateExtents()
 
         self.activityLayer.setCustomProperty('edited', False)
-        self.connect(self.activityLayer, SIGNAL("layerModified( bool )"), self._activity_layer_modified)
+        self.connect(self.activityLayer, SIGNAL("layerModified()"), self._activity_layer_modified)
 
         QgsMapLayerRegistry.instance().addMapLayer(self.activityLayer)
 
@@ -220,7 +220,8 @@ class OlaInterfaceDialog(QDialog):
 
         feature = selectedFeatures[0]
         attributes = feature.attributes()
-        uuid = attributes[0][1]
+        idx = self.iface.activeLayer().fieldNameIndex("id")
+        uuid = attributes[idx]
 
         self.activityRequestManager.getActivityById(uuid, self)
 
@@ -233,27 +234,32 @@ class OlaInterfaceDialog(QDialog):
         diffObject = {}
         diffObject['activities'] = []
         activity = {"id": str(self.currentActivity.id().toString()), "version": self.currentActivity.version()}
-
+        
         if self.activityLayer.customProperty('edited', False):
+            
+            iter = self.activityLayer.getFeatures()
+            
+            idx = self.activityLayer.fieldNameIndex("id")
+            
+            for feature in iter:
+                
+                if feature.attributes()[idx] == self.currentActivity.id().toString():
+                    
+                    if feature.geometry().wkbType() == QGis.WKBPoint:
+                        p = feature.geometry().asPoint()
 
-            provider = self.activityLayer.dataProvider()
-
-            feature = QgsFeature()
-
-            # start data retreival: fetch geometry and all attributes for each feature
-            provider.select([0])
-
-            # retreive every feature with its geometry and attributes
-            while provider.nextFeature(feature):
-
-                if feature.attributes()[0].toString() == self.currentActivity.id().toString():
-
-                    p = feature.geometry().asPoint()
-
-                    activity['geometry'] = {
-                    "type": "Point",
-                    "coordinates": [p.x(), p.y()]
-                    }
+                        activity['geometry'] = {
+                        "type": "Point",
+                        "coordinates": [p.x(), p.y()]
+                        }
+                        
+                    if feature.geometry().wkbType() == QGis.WKBMultiPoint:
+                        mp = feature.geometry().asMultiPoint()
+                        
+                        activity['geometry'] = {
+                        "type": "MultiPoint",
+                        "coordinates": [[p.x(), p.y()] for p in mp]
+                        }
 
                     break
 
@@ -423,24 +429,32 @@ class OlaInterfaceDialog(QDialog):
         """
 
         activities = []
-
+        
         data = json.loads(str(jsonBody))
         for activity in data['data']:
             # Create a new activity
             a = Activity(id=activity['id'], version=activity['version'])
-            # Get the point coords and set the geometry
-            coords = activity['geometry']['coordinates']
-            a.setGeometry(QgsGeometry.fromPoint(QgsPoint(coords[0], coords[1])))
+            # Get the coords and set the geometry
+            # Check first the geometry type
+            # Handle MultiPoint geometries
+            if activity['geometry']['type'].lower() == "multipoint":
+                points = []
+                for coords in activity['geometry']['coordinates']:
+                    points.append(QgsPoint(coords[0], coords[1]))
+                a.setGeometry(QgsGeometry.fromMultiPoint(points))
+            # Handle Point geometries
+            if activity['geometry']['type'].lower() == "point":
+                coords = activity['geometry']['coordinates']
+                a.setGeometry(QgsGeometry.fromPoint(QgsPoint(coords[0], coords[1])))
 
             # Append it to the list
             activities.append(a)
 
         return activities
 
-    def _layer_modified(self, onlyGeometry, * args, ** kwargs):
+    def _layer_modified(self, * args, ** kwargs):
         pass
 
-    def _activity_layer_modified(self, onlyGeometry, * args, ** kwargs):
+    def _activity_layer_modified(self, * args, ** kwargs):
 
-        if onlyGeometry:
-            self.activityLayer.setCustomProperty("edited", True)
+        self.activityLayer.setCustomProperty("edited", True)
